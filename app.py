@@ -15,13 +15,26 @@ def home():
 def webhook():
     data = request.json or {}
     
-    task_title = data.get("title", "New Task")
+    # Dynamically grab whatever fields are sent, with fallback defaults
+    task_title = data.get("title", data.get("task", "General Task Update"))
     priority = data.get("priority", "Normal")
     assignee = data.get("assignee", "Unassigned")
-    bucket = data.get("bucket", "General")
+    bucket = data.get("bucket", data.get("category", "General"))
+    status = data.get("status", "Active")
+    notes = data.get("notes", data.get("description", ""))
+
+    # Build a rich, comprehensive message containing everything
+    desc_lines = [
+        f"> **Category:** {bucket}",
+        f"> **Priority:** {priority}",
+        f"> **Assigned To:** {assignee}",
+        f"> **Status:** {status}"
+    ]
+    if notes:
+        desc_lines.append(f"\n**Details:** {notes}")
 
     discord_payload = {
-        "content": f"📋 **Task Update: {task_title}**\n> **Category:** {bucket}\n> **Priority:** {priority}\n> **Assigned To:** {assignee}"
+        "content": f"📋 **Task Update: {task_title}**\n" + "\n".join(desc_lines)
     }
 
     req = urllib.request.Request(
