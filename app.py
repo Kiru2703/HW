@@ -4,8 +4,7 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# Your Discord Webhook URL
-DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "https://discord.com/api/webhooks/1560909813414895707/YRmAbNAIN7sCE0dDCKwlaxxbmvrGcIFFKz3LE2i3vzWHjOmzIXXZFRfojskYH0znelX3")
+DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 
 @app.route("/", methods=["GET"])
 def home():
@@ -15,13 +14,11 @@ def home():
 def webhook():
     data = request.json or {}
     
-    # Extract task details sent to this endpoint
     task_title = data.get("title", "New Task")
     priority = data.get("priority", "Normal")
     assignee = data.get("assignee", "Unassigned")
     bucket = data.get("bucket", "General")
 
-    # Format the Discord embed payload
     payload = {
         "embeds": [
             {
@@ -33,10 +30,15 @@ def webhook():
         ]
     }
 
-    # Push to Discord
-    response = requests.post(DISCORD_WEBHOOK_URL, json=payload)
+    # Added headers so Discord doesn't block the cloud server IP
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    }
+
+    response = requests.post(DISCORD_WEBHOOK_URL, json=payload, headers=headers)
     
-    if response.status_code == 204:
+    if response.status_code in [200, 204]:
         return jsonify({"status": "success"}), 200
     else:
         return jsonify({"status": "failed", "error": response.text}), 400
